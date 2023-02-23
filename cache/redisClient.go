@@ -9,19 +9,21 @@ import (
 
 var client *redis.Client
 var ctx = context.Background()
-func ConnectToRedis() {
+
+func ConnectToRedis(host, port, password string, db int) {
+	adress := fmt.Sprintf("%s:%s", host, port)
 	client = redis.NewClient(&redis.Options{
-		Addr:     "fmdp-staging.ddnsfree.com:6379",
-		Password: "",
-		DB:       0,
+		Addr:     adress,
+		Password: password,
+		DB:       db,
 	})
 
 	pong, err := client.Ping(ctx).Result()
 	fmt.Println(pong)
 	if err != nil {
 		panic(err)
-		
-	}else{
+
+	} else {
 		fmt.Println("Connected to redis client")
 	}
 }
