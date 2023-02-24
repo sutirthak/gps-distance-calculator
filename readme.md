@@ -1,3 +1,3 @@
 # Objective
 ## GPS Distance Calculator
-- Distance two gps coordinates *longitude and latitude*
+- Distance between a list of multiple different gps coordinates - *longitude and latitude*

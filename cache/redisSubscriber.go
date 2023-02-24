@@ -1,19 +1,21 @@
 package cache
 
 import (
-	"context"
-
 	"github.com/redis/go-redis/v9"
+	log "github.com/sirupsen/logrus"
 )
 
-func Subscriber(redisClient *redis.Client, ctx context.Context, channel string, callback  func(*redis.Message)) {
-	pubsub := redisClient.Subscribe(ctx, channel)
+func (r *RedisInstance) Subscribe(channel string, callback func(*redis.Message)){
+	pubsub := r.RedisClient.Subscribe(r.Ctx, channel)
 	defer pubsub.Close()
 	for {
-		msg, err := pubsub.ReceiveMessage(ctx)
+		msg, err := pubsub.ReceiveMessage(r.Ctx)
 		if err != nil {
-			panic(err)
+			log.WithFields(log.Fields{
+				"message": "error in getting message from subscribe method",
+			}).Error(err)
+			return
 		}
-		callback (msg)
+		callback(msg)
 	}
 }
