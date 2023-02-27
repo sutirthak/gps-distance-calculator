@@ -18,7 +18,10 @@ func (r *RedisInstance) ConnectToRedis(host, port, password string, db int) erro
 	if err != nil {
 		return err
 
+	}else{
+		log.WithFields(log.Fields{
+			"pong": pong,
+		}).Info("Redis client connected successfully")
 	}
-	log.Info(pong)
 	return nil
 }

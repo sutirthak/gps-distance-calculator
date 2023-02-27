@@ -14,6 +14,4 @@ type RedisInstance struct {
 type RedisServices interface {
 	ConnectToRedis(string,string,string,int) error
 	Subscribe(string, func(*redis.Message))
-	CalculateTrackingData(*redis.Message)
-	StoreRedisData(*CoordinateData, float64, float64, float64, string, string)
 }
