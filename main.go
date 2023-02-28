@@ -21,8 +21,8 @@ func init() {
 		log.Error("No .env file found")
 	}
 }
-type CoordinateData struct {
-	Latitude, Longitude, Distance float64
+type DeviceData struct {
+	Latitude, Longitude, Distance ,Speed ,Count float64
 }
 
 var redisClient *redis.Client
@@ -54,21 +54,21 @@ func main() {
 }
 
 func CalculateTrackingData(message *redis.Message) {
-	
 	tracking_data := models.TrackingData{}
 	if err := json.Unmarshal([]byte(message.Payload), &tracking_data); err != nil {
 		log.Error(err)
 	}
 	current_latitude := tracking_data.GPS.Position.Latitude
 	current_longitude := tracking_data.GPS.Position.Longitude
+	current_speed:=tracking_data.Velocity.Speed
 	redisHashKey := "gps_distance_calculator"
 	redisHashField := fmt.Sprintf("source_id:%s", tracking_data.SourceId)
-	previous_redis_data := CoordinateData{}
-	isExists, err := redisClient.HExists(ctx, redisHashKey, redisHashField).Result()
-	if err != nil {
+	previous_redis_data := DeviceData{}
+	isExists,err:= redisClient.HExists(ctx, redisHashKey, redisHashField).Result()
+	if err!=nil{
 		log.Error(err)
 	}
-	if isExists {
+	if isExists{
 		val, err := redisClient.HGet(ctx, redisHashKey, redisHashField).Result()
 		if err != nil {
 			log.Error(err)
@@ -78,19 +78,32 @@ func CalculateTrackingData(message *redis.Message) {
 			log.Error(err2)
 		}
 	} else {
-		StoreRedisData(&previous_redis_data, current_latitude, current_longitude, 0, redisHashKey, redisHashField)
+		previous_redis_data.Latitude = current_latitude
+		previous_redis_data.Longitude = current_longitude
+		StoreValuesInRedis(&previous_redis_data,redisHashKey, redisHashField)
 	}
 	previous_latitude := previous_redis_data.Latitude
 	previous_longitude := previous_redis_data.Longitude
+	// Distance calculation
 	distance := calculator.CalculateDistanceInMeter(current_latitude, current_longitude, previous_latitude, previous_longitude)
-	StoreRedisData(&previous_redis_data, current_latitude, current_longitude, distance, redisHashKey, redisHashField)
-	log.Infof("device id: %s, [%f,%f]-[%f-%f] , distance:%f total distance: %f meter", tracking_data.SourceId, previous_latitude, previous_longitude, current_latitude, current_longitude, distance, previous_redis_data.Distance)
-}
-
-func StoreRedisData(previous_redis_data *CoordinateData, current_latitude, current_longitude, distance float64, redisHashKey, redisHashField string) {
+	// Updating Values in Redis cache
+	previous_redis_data.Speed=current_speed+previous_redis_data.Speed
+	previous_redis_data.Distance = distance + previous_redis_data.Distance
+	previous_redis_data.Count=1+previous_redis_data.Count
 	previous_redis_data.Latitude = current_latitude
 	previous_redis_data.Longitude = current_longitude
-	previous_redis_data.Distance = distance + previous_redis_data.Distance
+	// Avarage Speed Calculation
+	avgarageSpeed:=calculator.CalculateAvarageSpeed(previous_redis_data.Speed,previous_redis_data.Count)
+
+	// Storing new values in Redis cache
+	StoreValuesInRedis(&previous_redis_data,redisHashKey, redisHashField)
+	log.Infof("id: %s,[%f,%f]-[%f,%f],dist:%f total dist: %f meter,speed %f,total %f,avarage %f", tracking_data.SourceId, previous_latitude, previous_longitude, current_latitude, current_longitude, distance, previous_redis_data.Distance,current_speed,previous_redis_data.Speed,avgarageSpeed)
+	
+}
+
+func StoreValuesInRedis(previous_redis_data *DeviceData, redisHashKey, redisHashField string) {
+	
+	
 	jsonValue, err := json.Marshal(previous_redis_data)
 	if err != nil {
 		log.Error(err)
@@ -98,3 +111,5 @@ func StoreRedisData(previous_redis_data *CoordinateData, current_latitude, curre
 		redisClient.HSet(ctx, redisHashKey, redisHashField, jsonValue)
 	}
 }
+
+
