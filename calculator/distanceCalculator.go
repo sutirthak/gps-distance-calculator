@@ -2,15 +2,16 @@ package calculator
 
 import (
 	"math"
+	"github.com/mursalinsk-qi/gps-distance-calculator/models"
 )
 
-func CalculateDistanceInMeter(current_latitude, current_longitude, previous_latitude, previous_longitude float64) float64{
+func CalculateDistanceInMeter(startingPosition,endPosition models.Coordinate) float64{
 	radiousOfEarth := float64(6371)
-	dlat:=degreeToRadious(previous_latitude-current_latitude)
-	dlot:=degreeToRadious(previous_longitude-current_longitude)
-	a:=math.Sin(dlat/2)*math.Sin(dlat/2)+math.Cos(degreeToRadious(current_latitude))*math.Cos(degreeToRadious(previous_latitude))*math.Sin(dlot/2)*math.Sin(dlot/2)
-	c:=2 * math.Atan2(math.Sqrt(a),math.Sqrt(1-a))
-	distance:=radiousOfEarth*c
+	dlat := degreeToRadious(startingPosition.Latitude - endPosition.Latitude)
+	dlot := degreeToRadious(startingPosition.Longitude - endPosition.Longitude)
+	a := math.Sin(dlat/2)*math.Sin(dlat/2) + math.Cos(degreeToRadious(endPosition.Latitude))*math.Cos(degreeToRadious(startingPosition.Latitude))*math.Sin(dlot/2)*math.Sin(dlot/2)
+	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+	distance := radiousOfEarth * c
 	return distance * 1000
 
 }
