@@ -15,4 +15,12 @@ func TestLocalhostConnection(t *testing.T) {
 	}
 }
 
+func TestFMDPConnection(t *testing.T) {
+	redisInstance := RedisInstance{Ctx: ctx}
+	err := redisInstance.ConnectToRedis("fmdp-staging.ddnsfree.com", "6379", "", 0)
+	if err != nil {
+		t.Errorf("FMDP connection test case faild")
+	}
+}
+
 
