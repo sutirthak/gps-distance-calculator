@@ -55,14 +55,14 @@ func CalculateTrackingData(message *redis.Message) {
 	if err := json.Unmarshal([]byte(message.Payload), &tracking_data); err != nil {
 		log.Error(err)
 	}
-	current_position := models.Coordinate{Latitude: tracking_data.GPS.Position.Latitude, Longitude: tracking_data.GPS.Position.Longitude}
+	current_position := models.Position{Latitude: tracking_data.GPS.Position.Latitude, Longitude: tracking_data.GPS.Position.Longitude}
 	if current_position.Latitude == 0 && current_position.Longitude == 0 {
 		return
 	}
 	current_speed := tracking_data.Velocity.Speed
 	redisHashKey := "gps_distance_calculator"
 	redisHashField := fmt.Sprintf("source_id:%s", tracking_data.SourceId)
-	previous_device_data := models.DeviceData{}
+	previous_device_data := models.Trip{}
 	isExists, err := redisClient.HExists(ctx, redisHashKey, redisHashField).Result()
 	if err != nil {
 		log.Error(err)
@@ -77,29 +77,29 @@ func CalculateTrackingData(message *redis.Message) {
 			log.Error(err2)
 		}
 	} else {
-		previous_device_data.Coordinate.Latitude = current_position.Latitude
-		previous_device_data.Coordinate.Longitude = current_position.Longitude
+		previous_device_data.PrevPosition.Latitude = current_position.Latitude
+		previous_device_data.PrevPosition.Longitude = current_position.Longitude
 		StoreValuesInRedis(&previous_device_data, redisHashKey, redisHashField)
 	}
-	previous_position := models.Coordinate{Latitude: previous_device_data.Coordinate.Latitude, Longitude: previous_device_data.Coordinate.Longitude}
-	// Distance calculation
+	previous_position := models.Position{Latitude: previous_device_data.PrevPosition.Latitude, Longitude: previous_device_data.PrevPosition.Longitude}
+	// Distance and speed calculation
 	distance := calculator.CalculateDistanceInMeter(current_position, previous_position)
+	avgarageSpeed := calculator.CalculateAvarageSpeed(previous_device_data, current_speed)
 	// Updating Values in Redis cache
-	previous_device_data.Speed = current_speed + previous_device_data.Speed
+	previous_device_data.AvgSpeed = avgarageSpeed
 	previous_device_data.Distance = distance + previous_device_data.Distance
-	previous_device_data.Count = 1 + previous_device_data.Count
-	previous_device_data.Coordinate.Latitude = current_position.Latitude
-	previous_device_data.Coordinate.Longitude = current_position.Longitude
+	previous_device_data.DataCount = 1 + previous_device_data.DataCount
+	previous_device_data.PrevPosition.Latitude = current_position.Latitude
+	previous_device_data.PrevPosition.Longitude = current_position.Longitude
 	// Avarage Speed Calculation
-	avgarageSpeed := calculator.CalculateAvarageSpeed(previous_device_data.Speed, previous_device_data.Count)
 
 	// Storing new values in Redis cache
 	StoreValuesInRedis(&previous_device_data, redisHashKey, redisHashField)
-	log.Infof("id: %s,[%f,%f]-[%f,%f],dist:%f total dist: %f meter,speed %f,total %f,avarage %f", tracking_data.SourceId, previous_position.Latitude, previous_position.Longitude, current_position.Latitude, current_position.Longitude, distance, previous_device_data.Distance, current_speed, previous_device_data.Speed, avgarageSpeed)
+	log.Infof("id: %s,[%f,%f]-[%f,%f],dist:%f total dist: %f meter,speed %f, avarage %f", tracking_data.SourceId, previous_position.Latitude, previous_position.Longitude, current_position.Latitude, current_position.Longitude, distance, previous_device_data.Distance, current_speed, previous_device_data.AvgSpeed)
 
 }
 
-func StoreValuesInRedis(previous_device_data *models.DeviceData, redisHashKey, redisHashField string) {
+func StoreValuesInRedis(previous_device_data *models.Trip, redisHashKey, redisHashField string) {
 
 	jsonValue, err := json.Marshal(previous_device_data)
 	if err != nil {

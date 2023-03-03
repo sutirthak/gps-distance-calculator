@@ -4,7 +4,27 @@ package models
 // This denotes the data format structure of the models.
 // We must need to update the version if there is any change in the structures in this file
 const DataFormatVersion = "1.1.0"
+type Status string
+const (
+	TripStart    Status = "New"
+	TripRunning  Status = "In progress"
+	TripFinished Status = "Completed"
+)
 
+type Trip struct {
+	Id            string
+	Status        Status
+	LastTime      interface{}
+	LastPosition  *Position
+	StartTime     interface{}
+	StartPosition Position
+	EndTime       interface{}
+	EndPosition   *Position
+	AvgSpeed      float64
+	DataCount     int
+	Distance      float64
+	PrevPosition Position
+}
 type CellInfo struct {
 	BaseStationId  interface{} `json:"base_station_id,omitempty"`
 	CId            interface{} `json:"cid,omitempty"`
