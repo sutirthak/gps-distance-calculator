@@ -52,12 +52,12 @@ func TestCalculateDistanceValidPosition(t *testing.T) {
 func TestCalculateDistanceInvalidPosition(t *testing.T) {
 	cases := []distancetestCase{
 		{models.Position{Latitude: 0, Longitude: 0,IsValid: false}, models.Position{Latitude: 1.320491, Longitude: 103.964334,IsValid: true},-1},
-		{models.Position{Latitude: 98.56321, Longitude: -183.58641,IsValid: false}, models.Position{Latitude: 24.45321, Longitude: 103.423561,IsValid: true},-1},
+		{models.Position{Latitude: 84.56321, Longitude: -183.58641,IsValid: false}, models.Position{Latitude: 24.45321, Longitude: 103.423561,IsValid: true},-1},
 		{models.Position{Latitude: -98.56321, Longitude: 156.123456,IsValid: false}, models.Position{Latitude: 13.320491, Longitude: 109.964334,IsValid: true},-1},
 		{models.Position{Latitude: -93.56324, Longitude: -183.2354,IsValid: false}, models.Position{Latitude: 1.320491, Longitude: 103.964334,IsValid: true},-1},
-		{models.Position{Latitude: 64.32142, Longitude: -110.98632,IsValid: true}, models.Position{Latitude: 98, Longitude: 184,IsValid: false},-1},
-		{models.Position{Latitude: -10.32142, Longitude: 108.98632,IsValid: true}, models.Position{Latitude: 12.320491, Longitude: -183.964334,IsValid: false},-1},
-		{models.Position{Latitude: 64.32142, Longitude: 108.98632,IsValid: true}, models.Position{Latitude: -12.320491, Longitude: 183.964334,IsValid: false},-1},
+		{models.Position{Latitude: 64.32142, Longitude: -110.98632,IsValid: true}, models.Position{Latitude: 45, Longitude: 184,IsValid: false},-1},
+		{models.Position{Latitude: -10.32142, Longitude: 108.98632,IsValid: true}, models.Position{Latitude: 99.320491, Longitude: -120.964334,IsValid: false},-1},
+		{models.Position{Latitude: 64.32142, Longitude: 108.98632,IsValid: true}, models.Position{Latitude: -92.320491, Longitude: 183.964334,IsValid: false},-1},
 
 	}
 	for _, tc := range cases {
