@@ -17,13 +17,13 @@ type Trip struct {
 	LastTime      interface{}
 	LastPosition  *Position
 	StartTime     interface{}
-	StartPosition Position
+	StartPosition *Position
 	EndTime       interface{}
 	EndPosition   *Position
 	AvgSpeed      float64
 	DataCount     int
 	Distance      float64
-	PrevPosition Position
+	PrevPosition *Position
 }
 type CellInfo struct {
 	BaseStationId  interface{} `json:"base_station_id,omitempty"`
