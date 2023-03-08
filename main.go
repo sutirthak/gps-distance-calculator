@@ -10,9 +10,12 @@ import (
 	"github.com/joho/godotenv"
 	cache "github.com/mursalinsk-qi/gps-distance-calculator/cache/redis"
 	"github.com/mursalinsk-qi/gps-distance-calculator/calculator"
+	"github.com/mursalinsk-qi/gps-distance-calculator/controller"
 	"github.com/mursalinsk-qi/gps-distance-calculator/models"
 	"github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/labstack/echo/v4"
 )
 
 func init() {
@@ -25,6 +28,10 @@ var redisClient *redis.Client
 var ctx = context.Background()
 
 func main() {
+	e := echo.New()
+	e.GET("/version", controller.GetVersion)
+	e.Logger.Fatal(e.Start(":3000"))
+
 	// log formatting
 	log.SetFormatter(&log.TextFormatter{
 		ForceColors:   true,
