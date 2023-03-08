@@ -31,7 +31,6 @@ func main() {
 	e := echo.New()
 	e.GET("/version", controller.GetVersion)
 	e.Logger.Fatal(e.Start(":3000"))
-
 	// log formatting
 	log.SetFormatter(&log.TextFormatter{
 		ForceColors:   true,
