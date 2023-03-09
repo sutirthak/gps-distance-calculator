@@ -4,15 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"strconv"
 
 	"github.com/joho/godotenv"
-	cache "github.com/mursalinsk-qi/gps-distance-calculator/cache/redis"
-	"github.com/mursalinsk-qi/gps-distance-calculator/calculator"
-	"github.com/mursalinsk-qi/gps-distance-calculator/models"
 	"github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
+	cache "github.com/sutirthak/gps-distance-calculator/cache/redis"
+	"github.com/sutirthak/gps-distance-calculator/calculator"
+	"github.com/sutirthak/gps-distance-calculator/models"
+	"github.com/sutirthak/gps-distance-calculator/controller"
+	"github.com/labstack/echo/v4"
 )
 
 func init() {
@@ -21,8 +24,13 @@ func init() {
 	}
 }
 
-var redisClient *redis.Client
+
 var ctx = context.Background()
+var version string
+
+type Version struct {
+	Version string `json:"version"`
+}
 
 func main() {
 	// log formatting
@@ -32,25 +40,34 @@ func main() {
 	})
 	// Getting data from .env file
 	host := os.Getenv("FMDP_HOST")
-	port := os.Getenv("FMDP_PORT")
+	redis_server_port := os.Getenv("FMDP_PORT")
 	password := os.Getenv("FMDP_PASSWORD")
 	db, _ := strconv.Atoi(os.Getenv("FMDP_DB"))
 	channel := os.Getenv("FMDP_CHANNEL")
+	eco_server_port := os.Getenv("ECO_SERVER_PORT")
+
 	// Redis Connection
 	redisInstance := cache.RedisInstance{Ctx: ctx}
-	err := redisInstance.ConnectToRedis(host, port, password, db)
+	err := redisInstance.ConnectToRedis(host, redis_server_port, password, db)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"message": "error in redis connection, returning from main function",
 		}).Error(err)
 		return
 	}
-	redisClient = redisInstance.RedisClient
-	redisInstance.Subscribe(channel, CalculateTrackingData)
+
+	go redisInstance.Subscribe(channel, CalculateTrackingData)
+	// Server Connection
+	e := echo.New()
+	e.GET("/version", func(c echo.Context) error {
+		return c.JSON(http.StatusAccepted, Version{version})
+	})
+	e.GET("/trip/:sourceid",controller.GetTripData)
+	e.Logger.Fatal(e.Start(eco_server_port))
 
 }
-
 func CalculateTrackingData(message *redis.Message) {
+	redisClient := cache.GetRedisClient()
 	tracking_data := models.TrackingData{}
 	if err := json.Unmarshal([]byte(message.Payload), &tracking_data); err != nil {
 		log.WithFields(log.Fields{
@@ -58,9 +75,16 @@ func CalculateTrackingData(message *redis.Message) {
 		}).Error(err)
 		return
 	}
+	if tracking_data.GPS == nil {
+		log.Error("No GPS data")
+		return
+	}
 	current_position := tracking_data.GPS.Position
-	current_speed := tracking_data.Velocity.Speed
-	redisHashKey := "gps_distance_calculator"
+	current_speed := 0.0
+	if tracking_data.Velocity != nil {
+		current_speed = tracking_data.Velocity.Speed
+	}
+	redisHashKey := os.Getenv("FMDP_REDIS_HASHKEY")
 	redisHashField := fmt.Sprintf("source_id:%s", tracking_data.SourceId)
 	trip := models.Trip{}
 	isExists, err := redisClient.HExists(ctx, redisHashKey, redisHashField).Result()
@@ -104,7 +128,7 @@ func CalculateTrackingData(message *redis.Message) {
 }
 
 func StoreValuesInRedis(trip *models.Trip, redisHashKey, redisHashField string) {
-
+	redisClient := cache.GetRedisClient()
 	jsonValue, err := json.Marshal(trip)
 	if err != nil {
 		log.Error(err)
