@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -14,7 +13,7 @@ import (
 	cache "github.com/sutirthak/gps-distance-calculator/cache/redis"
 	"github.com/sutirthak/gps-distance-calculator/calculator"
 	"github.com/sutirthak/gps-distance-calculator/models"
-
+	"github.com/sutirthak/gps-distance-calculator/controller"
 	"github.com/labstack/echo/v4"
 )
 
@@ -24,7 +23,6 @@ func init() {
 	}
 }
 
-var redisClient *redis.Client
 var ctx = context.Background()
 var version string
 
@@ -55,17 +53,18 @@ func main() {
 		}).Error(err)
 		return
 	}
-	redisClient = redisInstance.RedisClient
 	go redisInstance.Subscribe(channel, CalculateTrackingData)
 	// Server Connection
 	e := echo.New()
 	e.GET("/version", func(c echo.Context) error {
 		return c.JSON(http.StatusAccepted, Version{version})
 	})
+	e.GET("/trip/:sourceid",controller.GetTripData)
 	e.Logger.Fatal(e.Start(eco_server_port))
 
 }
 func CalculateTrackingData(message *redis.Message) {
+	redisClient := cache.GetRedisClient()
 	tracking_data := models.TrackingData{}
 	if err := json.Unmarshal([]byte(message.Payload), &tracking_data); err != nil {
 		log.WithFields(log.Fields{
@@ -82,8 +81,8 @@ func CalculateTrackingData(message *redis.Message) {
 	if tracking_data.Velocity != nil {
 		current_speed = tracking_data.Velocity.Speed
 	}
-	redisHashKey := "gps_distance_calculator"
-	redisHashField := fmt.Sprintf("source_id:%s", tracking_data.SourceId)
+	redisHashKey := os.Getenv("FMDP_REDIS_HASHKEY")
+	redisHashField := tracking_data.SourceId
 	trip := models.Trip{}
 	isExists, err := redisClient.HExists(ctx, redisHashKey, redisHashField).Result()
 	if err != nil {
@@ -126,7 +125,7 @@ func CalculateTrackingData(message *redis.Message) {
 }
 
 func StoreValuesInRedis(trip *models.Trip, redisHashKey, redisHashField string) {
-
+	redisClient := cache.GetRedisClient()
 	jsonValue, err := json.Marshal(trip)
 	if err != nil {
 		log.Error(err)
