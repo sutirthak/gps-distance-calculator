@@ -24,7 +24,6 @@ func init() {
 	}
 }
 
-
 var ctx = context.Background()
 var version string
 
@@ -55,7 +54,6 @@ func main() {
 		}).Error(err)
 		return
 	}
-
 	go redisInstance.Subscribe(channel, CalculateTrackingData)
 	// Server Connection
 	e := echo.New()
