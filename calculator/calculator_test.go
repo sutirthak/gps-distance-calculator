@@ -2,7 +2,7 @@ package calculator
 
 import (
 	"testing"
-	"github.com/mursalinsk-qi/gps-distance-calculator/models"
+	"github.com/sutirthak/gps-distance-calculator/models"
 	"github.com/stretchr/testify/assert"
 )
 
