@@ -1,4 +1,4 @@
-module github.com/mursalinsk-qi/gps-distance-calculator
+module github.com/sutirthak/gps-distance-calculator
 
 go 1.20
 
