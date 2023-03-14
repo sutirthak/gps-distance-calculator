@@ -35,5 +35,8 @@ func checkValidPosition(position models.Position) bool {
 	if position.Longitude > 180 || position.Longitude < (-180) {
 		return false
 	}
+	if position.Latitude==0 && position.Longitude==0{
+		return false
+	}
 	return true
 }

@@ -2,10 +2,9 @@ package cache
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"github.com/redis/go-redis/v9"
+	log "github.com/sirupsen/logrus"
 )
-var redisClient *redis.Client
 
 func (r *RedisInstance) ConnectToRedis(host, port, password string, db int) error {
 	adress := fmt.Sprintf("%s:%s", host, port)
@@ -19,15 +18,10 @@ func (r *RedisInstance) ConnectToRedis(host, port, password string, db int) erro
 	if err != nil {
 		return err
 
-	}else{
-		redisClient=r.RedisClient
+	} else {
 		log.WithFields(log.Fields{
 			"pong": pong,
 		}).Info("Redis client connected successfully")
 	}
 	return nil
-}
-
-func GetRedisClient() *redis.Client{
-	return redisClient
 }
