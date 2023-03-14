@@ -2,8 +2,8 @@ package cache
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"github.com/redis/go-redis/v9"
+	log "github.com/sirupsen/logrus"
 )
 
 func (r *RedisInstance) ConnectToRedis(host, port, password string, db int) error {
@@ -18,7 +18,7 @@ func (r *RedisInstance) ConnectToRedis(host, port, password string, db int) erro
 	if err != nil {
 		return err
 
-	}else{
+	} else {
 		log.WithFields(log.Fields{
 			"pong": pong,
 		}).Info("Redis client connected successfully")

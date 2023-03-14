@@ -5,7 +5,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func (r *RedisInstance) Subscribe(channel string, callback func(*redis.Message)){
+func (r *RedisInstance) Subscribe(channel string, callback func(*redis.Message,*RedisInstance)){
 	pubsub := r.RedisClient.Subscribe(r.Ctx, channel)
 	defer pubsub.Close()
 	for {
@@ -16,6 +16,6 @@ func (r *RedisInstance) Subscribe(channel string, callback func(*redis.Message))
 			}).Error(err)
 			return
 		}
-		callback(msg)
+		callback(msg,r)
 	}
 }
